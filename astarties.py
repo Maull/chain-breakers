@@ -2,7 +2,6 @@ import pandas as pd
 import random
 import re
 import os
-from astarties_data import *
 
 # ==========================================
 # 1. CONFIGURATION
@@ -129,12 +128,8 @@ class Marine:
                 self.rank_history = f"{self.current_rank} ({get_year_str(self.implantation_year)} - Current) (Unknown age)\n"
             self.current_tier = TIERS.get(self.current_rank, 2)
             
-            # LORE OVERRIDE: Garrick (ID 101) starts as Sergeant
-            # LORE OVERRIDE: Garrick (ID 101) starts as Battle Brother
+            # LORE OVERRIDE: Garrick (ID 101) starts as a Battle Brother.
             if self.id == "101":
-                self.current_rank = "Sergeant"
-                self.current_tier = TIERS.get(self.current_rank, 3)
-                self.rank_history = f"Sergeant ({get_year_str(self.implantation_year)} - Current)\n"
                 self.current_rank = "Battle Brother"
                 self.current_tier = TIERS.get(self.current_rank, 1)
                 self.rank_history = f"Battle Brother ({get_year_str(self.implantation_year)} - Current)\n"
@@ -192,6 +187,17 @@ class Marine:
             if self.squad_assignment:
                 self.years_in_assignment += 1
 
+    def _get_origin_stamp(self, year):
+        """Gets the origin chapter stamp for pre-Refounding marines."""
+        if year < 638:
+            try:
+                mid = int(self.id)
+                if 100 <= mid <= 199: return " [Doom Eagles]"
+                if 200 <= mid <= 299: return " [Storm Giants]"
+            except (ValueError, TypeError):
+                pass
+        return ""
+
     def close_history_string(self, text_block, end_year):
         match = re.search(r'\((\d{3})\.M4([12]) - Current\)', text_block)
         if match:
@@ -223,16 +229,8 @@ class Marine:
         elif new_rank == "Bond-Keeper" and self.notes == "Standard Indoctrination":
             self.notes = "Hollow High-Capacity Identified"
 
-        origin_stamp = ""
-        if year < 638:
-            try:
-                mid = int(self.id)
-                if 100 <= mid <= 199: origin_stamp = " [Doom Eagles]"
-                elif 200 <= mid <= 299: origin_stamp = " [Storm Giants]"
-            except: pass
-
         self.rank_history = self.close_history_string(self.rank_history, year)
-        new_entry = f"{display_rank} ({get_year_str(year)} - Current) ({age} Years old on date of promotion){origin_stamp}\n"
+        new_entry = f"{display_rank} ({get_year_str(year)} - Current) ({age} Years old on date of promotion){self._get_origin_stamp(year)}\n"
         self.rank_history = new_entry + self.rank_history
         self.current_rank = new_rank
         self.current_tier = TIERS.get(new_rank, 1)
@@ -255,14 +253,7 @@ class Marine:
     def deploy(self, company, squad, year, slot=0):
         if self.squad_assignment == (company, squad) and self.current_slot == slot: return
         self.deployment_history = self.close_history_string(self.deployment_history, year)
-        
-        origin_stamp = ""
-        if year < 638:
-            try:
-                mid = int(self.id)
-                if 100 <= mid <= 199: origin_stamp = " [Doom Eagles]"
-                elif 200 <= mid <= 299: origin_stamp = " [Storm Giants]"
-            except: pass
+        origin_stamp = self._get_origin_stamp(year)
 
         if company == -1:
             new_entry = f"Chapter Reserve ({get_year_str(year)} - Current)\n"
