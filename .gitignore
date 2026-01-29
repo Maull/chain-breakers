@@ -1,0 +1,6 @@
+# Ignore everything
+*
+
+# Exception: Keep these files
+!astarties.py
+!.gitignore
