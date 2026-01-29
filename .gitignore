@@ -2,5 +2,6 @@
 *
 
 # Exception: Keep these files
+!astarties_data.py
 !astarties.py
 !.gitignore
