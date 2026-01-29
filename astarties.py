@@ -615,8 +615,16 @@ class Marine:
         elif new_rank == "Bond-Keeper" and self.notes == "Standard Indoctrination":
             self.notes = "Hollow High-Capacity Identified"
 
+        origin_stamp = ""
+        if year < 638:
+            try:
+                mid = int(self.id)
+                if 100 <= mid <= 199: origin_stamp = " [Doom Eagles]"
+                elif 200 <= mid <= 299: origin_stamp = " [Storm Giants]"
+            except: pass
+
         self.rank_history = self.close_history_string(self.rank_history, year)
-        new_entry = f"{display_rank} ({get_year_str(year)} - Current) ({age} Years old on date of promotion)\n"
+        new_entry = f"{display_rank} ({get_year_str(year)} - Current) ({age} Years old on date of promotion){origin_stamp}\n"
         self.rank_history = new_entry + self.rank_history
         self.current_rank = new_rank
         self.current_tier = TIERS.get(new_rank, 1)
@@ -640,6 +648,14 @@ class Marine:
         if self.squad_assignment == (company, squad) and self.current_slot == slot: return
         self.deployment_history = self.close_history_string(self.deployment_history, year)
         
+        origin_stamp = ""
+        if year < 638:
+            try:
+                mid = int(self.id)
+                if 100 <= mid <= 199: origin_stamp = " [Doom Eagles]"
+                elif 200 <= mid <= 299: origin_stamp = " [Storm Giants]"
+            except: pass
+
         if company == -1:
             new_entry = f"Chapter Reserve ({get_year_str(year)} - Current)\n"
         elif company == 0:
@@ -656,6 +672,9 @@ class Marine:
             squad_str = "Command Squad" if squad == 0 else f"{get_ordinal(squad)} Squad"
             new_entry = f"{get_ordinal(company)} Chapter, {squad_str} ({get_year_str(year)} - Current)\n"
             
+        if origin_stamp:
+            new_entry = new_entry.strip() + origin_stamp + "\n"
+
         self.deployment_history = new_entry + self.deployment_history
         self.squad_assignment = (company, squad)
         self.current_slot = slot
