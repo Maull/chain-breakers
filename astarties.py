@@ -2,6 +2,7 @@ import pandas as pd
 import random
 import re
 import os
+from astarties_data import *
 
 # ==========================================
 # 1. CONFIGURATION
@@ -128,8 +129,13 @@ class Marine:
                 self.rank_history = f"{self.current_rank} ({get_year_str(self.implantation_year)} - Current) (Unknown age)\n"
             self.current_tier = TIERS.get(self.current_rank, 2)
             
+            # LORE OVERRIDE: Garrick (ID 101) starts as Sergeant
+            # LORE OVERRIDE: Garrick (ID 101) starts as Battle Brother
             # LORE OVERRIDE: Garrick (ID 101) starts as a Battle Brother.
             if self.id == "101":
+                self.current_rank = "Sergeant"
+                self.current_tier = TIERS.get(self.current_rank, 3)
+                self.rank_history = f"Sergeant ({get_year_str(self.implantation_year)} - Current)\n"
                 self.current_rank = "Battle Brother"
                 self.current_tier = TIERS.get(self.current_rank, 1)
                 self.rank_history = f"Battle Brother ({get_year_str(self.implantation_year)} - Current)\n"
@@ -229,7 +235,16 @@ class Marine:
         elif new_rank == "Bond-Keeper" and self.notes == "Standard Indoctrination":
             self.notes = "Hollow High-Capacity Identified"
 
+        origin_stamp = ""
+        if year < 638:
+            try:
+                mid = int(self.id)
+                if 100 <= mid <= 199: origin_stamp = " [Doom Eagles]"
+                elif 200 <= mid <= 299: origin_stamp = " [Storm Giants]"
+            except: pass
+
         self.rank_history = self.close_history_string(self.rank_history, year)
+        new_entry = f"{display_rank} ({get_year_str(year)} - Current) ({age} Years old on date of promotion){origin_stamp}\n"
         new_entry = f"{display_rank} ({get_year_str(year)} - Current) ({age} Years old on date of promotion){self._get_origin_stamp(year)}\n"
         self.rank_history = new_entry + self.rank_history
         self.current_rank = new_rank
@@ -253,6 +268,14 @@ class Marine:
     def deploy(self, company, squad, year, slot=0):
         if self.squad_assignment == (company, squad) and self.current_slot == slot: return
         self.deployment_history = self.close_history_string(self.deployment_history, year)
+        
+        origin_stamp = ""
+        if year < 638:
+            try:
+                mid = int(self.id)
+                if 100 <= mid <= 199: origin_stamp = " [Doom Eagles]"
+                elif 200 <= mid <= 299: origin_stamp = " [Storm Giants]"
+            except: pass
         origin_stamp = self._get_origin_stamp(year)
 
         if company == -1:
@@ -623,44 +646,23 @@ def upload_to_google_sheets():
 
     try:
         import gspread
-        
-        # Authenticate using the service account file and scopes
         gc = gspread.service_account(filename=SERVICE_ACCOUNT_FILE, scopes=SCOPES)
         sh = gc.open_by_key(SPREADSHEET_ID)
         
-        # Upload Logbook
-        try:
-            ws_log = sh.worksheet('Logbook')
-            df_log = pd.read_csv('Logbook.csv').fillna("")
-            ws_log.clear()
-            # Robust update for different gspread versions
-            data = [df_log.columns.values.tolist()] + df_log.values.tolist()
-            ws_log.update(range_name='A1', values=data)
-            print("Logbook uploaded.")
-        except Exception as e:
-            print(f"Error uploading Logbook: {e}")
+        def _upload_sheet(sheet_name, csv_file):
+            try:
+                ws = sh.worksheet(sheet_name)
+                df = pd.read_csv(csv_file).fillna("")
+                ws.clear()
+                data = [df.columns.values.tolist()] + df.values.tolist()
+                ws.update(range_name='A1', values=data)
+                print(f"{sheet_name} uploaded.")
+            except Exception as e:
+                print(f"Error uploading {sheet_name}: {e}")
 
-        # Upload Relics
-        try:
-            ws_relics = sh.worksheet('Relics')
-            df_relics = pd.read_csv('Relics.csv').fillna("")
-            ws_relics.clear()
-            data = [df_relics.columns.values.tolist()] + df_relics.values.tolist()
-            ws_relics.update(range_name='A1', values=data)
-            print("Relics uploaded.")
-        except Exception as e:
-            print(f"Error uploading Relics: {e}")
-
-        # Upload Roster
-        try:
-            ws_roster = sh.worksheet('Roster')
-            df_roster = pd.read_csv('OUTPUT Auto-Roster.csv').fillna("")
-            ws_roster.clear()
-            data = [df_roster.columns.values.tolist()] + df_roster.values.tolist()
-            ws_roster.update(range_name='A1', values=data)
-            print("Roster uploaded.")
-        except Exception as e:
-            print(f"Error uploading Roster: {e}")
+        _upload_sheet('Logbook', 'Logbook.csv')
+        _upload_sheet('Relics', 'Relics.csv')
+        _upload_sheet('Roster', 'OUTPUT Auto-Roster.csv')
             
     except ImportError:
         print("Error: gspread library not installed. Run: pip install gspread")
