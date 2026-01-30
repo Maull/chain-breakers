@@ -1,3 +1,52 @@
+# ==========================================
+# 1. CONFIGURATION
+# ==========================================
+
+# Timeline
+START_YEAR_ABS = 540   
+END_YEAR_ABS = 1018    
+REFOUNDING_YEAR = 636  
+RECRUITMENT_START = 638
+
+NEOPHYTE_INTAKE_OVERRIDE = 0 
+TARGET_POPULATION = 1200
+
+# Google Sheets Configuration
+SERVICE_ACCOUNT_FILE = 'credentials.json'
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+SPREADSHEET_ID = '1FmexJsqPIEVe4OgLWv2j1I3LUqsHhPBKEj48T8mW780'
+TRANSACTION_LOG = []
+DISCOVERED_RELICS_LOG = []
+
+def log_transaction(year, marine, event, details=""):
+    if marine.squad_assignment:
+        c = marine.squad_assignment[0]
+        s = marine.squad_assignment[1]
+        k = marine.current_slot
+    else:
+        # Use a specific value for unassigned, not 0,0,0 which is Chapter Master's slot
+        c, s, k = -2, -2, -2
+    TRANSACTION_LOG.append({
+        "Year": year,
+        "Marine ID": marine.id,
+        "Name": marine.name,
+        "Event": event,
+        "Rank": marine.current_rank,
+        "Company": c,
+        "Squad": s,
+        "Slot": k,
+        "Details": details
+    })
+
+def log_relic_discovery(relic):
+    DISCOVERED_RELICS_LOG.append({
+        "ID": relic.get('id', ''),
+        "Name": relic.get('name', ''),
+        "Type": relic.get('type', ''),
+        "Description": relic.get('desc', ''),
+        "Year Acquired": relic.get('date', '')
+    })
+
 # Tenure Requirements (Years in rank required for promotion)
 TENURE_REQS = {0: 8, 1: 5, 2: 10, 3: 15, 4: 20, 5: 30}
 OLD_GUARD_MORTALITY_RISK = 0.0005 # 0.05% chance per year
@@ -369,7 +418,7 @@ STORY_CHARACTERS = [
         "Name": "Aris Thorne", 
         "Cognomen": "", 
         "Rank": "Bond-Keeper", 
-        "Company": 6, 
+        "Company": .6, 
         "Squad": 2 
     }
 ]

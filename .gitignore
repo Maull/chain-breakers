@@ -2,6 +2,15 @@
 *
 
 # Exception: Keep these files
-!astarties_data.py
 !astarties.py
+!config.py
+!chapter.py
+!gsuite.py
+!marine.py
+!simulation.py
+!utils.py
 !.gitignore
+
+# Keep input data
+!INPUT Auto-Roster.csv
+
