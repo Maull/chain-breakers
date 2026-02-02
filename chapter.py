@@ -4,6 +4,9 @@ from config import (
     TENURE_REQS,
     TIERS,
     log_transaction,
+    WARGEAR_MAPPING,
+    WARGEAR_LOADOUTS,
+    WARGEAR_LOG,
 )
 
 
@@ -19,6 +22,7 @@ class Chapter:
             2: {k: None for k in range(500)}     # Unlimited (500) for Iron Calculus + Counters
         }
         self.reserve = []
+        self.wargear_armory = []
 
     def remove_from_grid(self, marine):
         if marine.squad_assignment:
@@ -467,3 +471,61 @@ class Chapter:
 
             if not assigned:
                 break
+
+    def process_wargear(self, all_marines, year, wargear_id_counter):
+        """
+        Assigns wargear kits to marines based on their current assignment.
+        Returns the updated wargear_id_counter.
+        """
+        for m in all_marines:
+            if m.status != "Alive":
+                continue
+            
+            # Dreadnoughts do not use this wargear system
+            if m.current_rank == "Dreadnought":
+                continue
+
+            # Determine required loadout
+            req_loadout_id = None
+            if m.squad_assignment:
+                c, s = m.squad_assignment
+                # Check mapping
+                if c in WARGEAR_MAPPING:
+                    squad_map = WARGEAR_MAPPING[c].get(s, WARGEAR_MAPPING[c].get("Default"))
+                    if isinstance(squad_map, dict):
+                        req_loadout_id = squad_map.get(m.current_rank)
+                        if not req_loadout_id:
+                            req_loadout_id = squad_map.get("Default")
+                    elif isinstance(squad_map, str):
+                        req_loadout_id = squad_map
+            
+            # If no mapping found, maybe default? For now, leave as None (no gear assigned)
+            
+            # Check if current kit matches
+            if m.active_kit:
+                if req_loadout_id and m.active_kit["type"] == req_loadout_id:
+                    continue # Keep current kit
+                else:
+                    # Wrong kit or no kit needed -> Return current
+                    m.return_kit(year, self.wargear_armory)
+            
+            # Assign new kit if needed
+            if req_loadout_id:
+                # Look in armory
+                candidate_kit = next((k for k in self.wargear_armory if k["type"] == req_loadout_id), None)
+                
+                if candidate_kit:
+                    self.wargear_armory.remove(candidate_kit)
+                else:
+                    # Fabricate new
+                    candidate_kit = WARGEAR_LOADOUTS[req_loadout_id].copy()
+                    candidate_kit["id"] = f"WG-{wargear_id_counter}"
+                    candidate_kit["type"] = req_loadout_id
+                    candidate_kit["fabricated"] = year
+                    candidate_kit["history"] = []
+                    wargear_id_counter += 1
+                    WARGEAR_LOG.append(candidate_kit)
+                
+                m.receive_kit(candidate_kit, year)
+        
+        return wargear_id_counter
