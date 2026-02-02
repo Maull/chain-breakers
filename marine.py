@@ -8,6 +8,7 @@ from config import (
     log_transaction,
     START_YEAR_ABS,
     TIERS,
+    WARGEAR_LOADOUTS,
 )
 from utils import get_year_str, parse_year, get_ordinal
 
@@ -116,6 +117,8 @@ class Marine:
         self.last_deathwatch_return = 0
         self.active_relics = []
         self.relic_history = []
+        self.active_kit = None
+        self.kit_history = []
 
     def reset_turn_flag(self):
         self.moved_this_turn = False
@@ -211,6 +214,28 @@ class Marine:
             reliquary.append(r)
         self.active_relics = []
 
+    def receive_kit(self, kit, year):
+        self.active_kit = kit
+        # Update kit history
+        if "history" not in kit:
+            kit["history"] = []
+        kit["history"].append({"name": self.name, "start": year, "end": None})
+        
+        self.kit_history.append({"kit": kit, "start": year, "end": None})
+
+    def return_kit(self, year, armory):
+        if self.active_kit:
+            # Close history on kit side
+            if "history" in self.active_kit and self.active_kit["history"]:
+                self.active_kit["history"][-1]["end"] = year
+            
+            # Close history on marine side
+            if self.kit_history and self.kit_history[-1]["end"] is None:
+                self.kit_history[-1]["end"] = year
+            
+            armory.append(self.active_kit)
+            self.active_kit = None
+
     def deploy(self, company, squad, year, slot=0):
         if self.squad_assignment == (company, squad) and self.current_slot == slot:
             return
@@ -277,6 +302,15 @@ class Marine:
         self.deployment_history = self.close_history_string(
             self.deployment_history, year
         )
+        
+        # Close Wargear History if active
+        if self.active_kit:
+            # Note: We don't return the kit to armory on death unless specified, but usually gear is recovered.
+            # For simulation simplicity, we'll assume gear is recovered by the chapter (returned to armory).
+            # But the 'return_kit' method requires the armory list, which we don't have here.
+            # The simulation loop handles return_relics, it should handle return_kit too.
+            pass
+
         age = year - (self.implantation_year - 12)
         kia_entry = (
             f"KIA ({self.current_rank}) ({get_year_str(year)}) ({age} Years old)\n"
@@ -300,6 +334,16 @@ class Marine:
             d_hist = d_hist[:45000] + "\n[...ARCHIVE TRUNCATED...]"
 
         wargear_lines = []
+        
+        # 1. Standard Kit
+        for h in self.kit_history:
+            k_id = h["kit"]["id"]
+            k_type = h["kit"]["type"]
+            start = get_year_str(h["start"])
+            end = get_year_str(h["end"]) if h["end"] else "Current"
+            wargear_lines.append(f"{k_id} ({k_type}) ({start} - {end})")
+
+        # 2. Relics
         for h in self.relic_history:
             r_name = h["relic"]["name"]
             r_type = h["relic"]["type"]

@@ -21,6 +21,7 @@ from config import (
     log_transaction,
     REFOUNDING_YEAR,
     DISCOVERED_RELICS_LOG,
+    WARGEAR_LOG,
 )
 from gsuite import upload_to_google_sheets, update_human_officers
 from marine import Marine
@@ -61,6 +62,7 @@ def generate_assignment_priority_list():
 def run_simulation():
     TRANSACTION_LOG.clear()
     DISCOVERED_RELICS_LOG.clear()
+    WARGEAR_LOG.clear()
     print("Initiating Chain Breakers Auto-Roster Protocol v17.0...")
     assignment_order = generate_assignment_priority_list()
 
@@ -122,6 +124,7 @@ def run_simulation():
     dread_name_index = 0
     dread_id_counter = 1
 
+    wargear_id_counter = 1000
     dead_iron_calculus_count = 0
     # --- TIME LOOP ---
     for year in range(START_YEAR_ABS, END_YEAR_ABS + 1):
@@ -449,6 +452,7 @@ def run_simulation():
             if m.squad_assignment == (0, 5):
                 if random.random() < 0.002:
                     chapter.remove_from_grid(m)
+                    m.return_kit(year, chapter.wargear_armory)
                     m.return_relics(year, reliquary)
                     m.kill(year)
                 continue
@@ -458,6 +462,7 @@ def run_simulation():
                 if m in chapter.reserve:
                     chapter.reserve.remove(m)
                 chapter.remove_from_grid(m)
+                m.return_kit(year, chapter.wargear_armory)
                 m.return_relics(year, reliquary)
                 m.kill(year)
                 continue
@@ -507,6 +512,7 @@ def run_simulation():
                     if m in chapter.reserve:
                         chapter.reserve.remove(m)
                     chapter.remove_from_grid(m)
+                    m.return_kit(year, chapter.wargear_armory)
                     m.return_relics(year, reliquary)
                     m.kill(year)
 
@@ -519,6 +525,7 @@ def run_simulation():
                 if m and m.status == "Alive":
                     if random.random() < 0.001:
                         chapter.remove_from_grid(m)
+                        m.return_kit(year, chapter.wargear_armory)
                         m.return_relics(year, reliquary)
                         m.kill(year)
                         dead_iron_calculus_count += 1
@@ -647,6 +654,7 @@ def run_simulation():
                     chapter.remove_from_grid(candidate)
                 if candidate in chapter.reserve:
                     chapter.reserve.remove(candidate)
+                candidate.return_kit(year, chapter.wargear_armory)
                 candidate.return_relics(year, reliquary)
                 candidate.promote(
                     "Dreadnought",
@@ -742,6 +750,9 @@ def run_simulation():
 
         # RELIC ASSIGNMENT
         chapter.assign_relics(all_marines, reliquary, year)
+
+        # WARGEAR ASSIGNMENT
+        wargear_id_counter = chapter.process_wargear(all_marines, year, wargear_id_counter)
 
         # ASSIGNMENTS
         for c, s in assignment_order:
@@ -871,7 +882,7 @@ def run_simulation():
         df_out.to_csv("OUTPUT Auto-Roster.csv", index=False, mode="w")
 
         update_human_officers()
-        upload_to_google_sheets(TRANSACTION_LOG, DISCOVERED_RELICS_LOG)
+        upload_to_google_sheets(TRANSACTION_LOG, DISCOVERED_RELICS_LOG, WARGEAR_LOG)
     else:
         print("Warning: No marines found. Output generation skipped.")
     print("Process Finished.")
