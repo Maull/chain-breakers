@@ -122,6 +122,7 @@ def run_simulation():
     dread_name_index = 0
     dread_id_counter = 1
 
+    dead_iron_calculus_count = 0
     # --- TIME LOOP ---
     for year in range(START_YEAR_ABS, END_YEAR_ABS + 1):
         moved_ids = set()
@@ -211,6 +212,8 @@ def run_simulation():
                         if m.deathwatch_terms > 0 and (
                             year - m.last_deathwatch_return
                         ) < 30:
+                            return False
+                        if not any(r.get("type") == "Echo" for r in m.active_relics):
                             return False
                         return True
 
@@ -442,6 +445,7 @@ def run_simulation():
         for m in [x for x in all_marines if x.status == "Alive"]:
             if m.current_rank == "Dreadnought":
                 continue
+            if m.current_rank == "Iron Calculus": continue
             if m.squad_assignment == (0, 5):
                 if random.random() < 0.002:
                     chapter.remove_from_grid(m)
@@ -505,6 +509,105 @@ def run_simulation():
                     chapter.remove_from_grid(m)
                     m.return_relics(year, reliquary)
                     m.kill(year)
+
+        # 20th COMPANY LOGIC (Starts 792.M41)
+        if year >= 792:
+            # 1. Iron Calculus Mortality (0.1%)
+            ic_squad = chapter.grid[20][2]
+            for k in range(2, 500):
+                m = ic_squad[k]
+                if m and m.status == "Alive":
+                    if random.random() < 0.001:
+                        chapter.remove_from_grid(m)
+                        m.return_relics(year, reliquary)
+                        m.kill(year)
+                        dead_iron_calculus_count += 1
+
+            # 2. Transformation (Bond-Keeper -> Iron Calculus)
+            bk_squad = chapter.grid[20][1]
+            for k in range(3):
+                m = bk_squad[k]
+                if m and m.status == "Alive" and m.current_rank == "Bond-Keeper":
+                    # Promote after 2-4 years
+                    should_promote = False
+                    if m.years_in_assignment >= 4:
+                        should_promote = True
+                    elif m.years_in_assignment >= 2 and random.random() < 0.3:
+                        should_promote = True
+
+                    if should_promote:
+                        chapter.remove_from_grid(m)
+                        m.promote("Iron Calculus", year)
+                        
+                        # Move to Co 20 Sq 2 (First empty slot >= 2)
+                        target_slot = next((ts for ts in range(2, 500) if chapter.grid[20][2][ts] is None), -1)
+                        if target_slot != -1:
+                            chapter.grid[20][2][target_slot] = m
+                            m.deploy(20, 2, year, target_slot)
+                            
+                            # Create Echo Relic(s)
+                            echo_roll = random.random()
+                            if echo_roll < 0.40:
+                                num_echoes = 1
+                            elif echo_roll < 0.60:
+                                num_echoes = 2
+                            else:
+                                num_echoes = 3
+
+                            for i in range(1, num_echoes + 1):
+                                if num_echoes == 1:
+                                    r_name = f"{m.name}'s Echo"
+                                    r_id = f"E-{m.id}"
+                                else:
+                                    roman = to_roman(i)
+                                    r_name = f"{m.name}'s Echo Shard {roman}"
+                                    r_id = f"E-{m.id}-{roman}"
+
+                                new_relic = {
+                                    "id": r_id,
+                                    "name": r_name,
+                                    "type": "Echo",
+                                    "desc": f"An Echo implant, donated by {m.name}",
+                                    "date": year
+                                }
+                                reliquary.append(new_relic)
+                                log_relic_discovery(new_relic)
+                                log_transaction(year, m, "Relic Created", f"Manifested {new_relic['name']}")
+
+            # 3. Recruitment (Fill Co 20 Sq 1)
+            open_slots = [k for k in range(3) if chapter.grid[20][1][k] is None]
+            if open_slots:
+                candidates = [
+                    x for x in all_marines 
+                    if x.status == "Alive" 
+                    and x.current_rank == "Battle Brother"
+                    and x.years_in_rank >= 5
+                    and (year - (x.implantation_year - 12)) < 40
+                    and x.squad_assignment != (20, 1)
+                    and x.squad_assignment != (0, 5)
+                ]
+                candidates.sort(key=lambda x: x.years_in_rank, reverse=True)
+                
+                for _ in range(len(open_slots)):
+                    if not candidates: break
+                    cand = candidates.pop(0)
+                    slot = open_slots.pop(0)
+                    if cand.squad_assignment: chapter.remove_from_grid(cand)
+                    if cand in chapter.reserve: chapter.reserve.remove(cand)
+                    cand.promote("Bond-Keeper", year)
+                    chapter.grid[20][1][slot] = cand
+                    cand.deploy(20, 1, year, slot)
+
+            # 4. Update Counters (Co 20 Sq 2 Slots 0 & 1)
+            living_ic = sum(1 for k in range(2, 500) if chapter.grid[20][2][k] is not None)
+            
+            cnt1 = Marine(procedural_id=f"{living_ic}", birth_year=year, name="Iron Calculus (Alive)")
+            chapter.grid[20][2][0] = cnt1
+            cnt1.deploy(20, 2, year, 0)
+
+            cnt2 = Marine(procedural_id=f"{dead_iron_calculus_count}", birth_year=year, name="Iron Calculus (Dead)")
+            chapter.grid[20][2][1] = cnt2
+            cnt2.deploy(20, 2, year, 1)
 
         # FORCED INTERMENT PROTOCOL
         if active_dreadnoughts < dread_cap:
