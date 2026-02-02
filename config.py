@@ -17,6 +17,7 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapi
 SPREADSHEET_ID = '1FmexJsqPIEVe4OgLWv2j1I3LUqsHhPBKEj48T8mW780'
 TRANSACTION_LOG = []
 DISCOVERED_RELICS_LOG = []
+WARGEAR_LOG = []
 
 def log_transaction(year, marine, event, details=""):
     if marine.squad_assignment:
@@ -50,6 +51,342 @@ def log_relic_discovery(relic):
 # Tenure Requirements (Years in rank required for promotion)
 TENURE_REQS = {0: 8, 1: 5, 2: 10, 3: 15, 4: 20, 5: 30}
 OLD_GUARD_MORTALITY_RISK = 0.00005 # 0.05% chance per year
+
+# ==========================================
+# WARGEAR CONFIGURATION
+# ==========================================
+
+WARGEAR_LOADOUTS = {
+    "L-TACTICAL": {
+        "Right": "Godwyn Bolt Rifle",
+        "Left": "Empty",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": "None"
+    },
+    "L-ASSAULT": {
+        "Right": "Bolt Pistol",
+        "Left": "Chainsword",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": "None"
+    },
+    "L-NEOPHYTE": {
+        "Right": "Boltgun",
+        "Left": "Combat Knife",
+        "Armor": "Scout Carapace",
+        "Extra": "Camo Cloak"
+    },
+    "L-CHAPTER-MASTER": {
+        "Right": "Relic Blade",
+        "Left": "Master-Crafted Storm Bolter",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": "Iron Halo"
+    },
+    "L-CAPTAIN": {
+        "Right": "Power Sword",
+        "Left": "Bolt Pistol",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": "Iron Halo"
+    },
+    "L-LIEUTENANT": {
+        "Right": "Power Sword",
+        "Left": "Bolt Pistol",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": "None"
+    },
+    "L-CHAPLAIN": {
+        "Right": "Crozius Arcanum",
+        "Left": "Bolt Pistol",
+        "Armor": "Noxian Pattern Mark XIV (Black)",
+        "Extra": "Rosarius"
+    },
+    "L-APOTHECARY": {
+        "Right": "Bolt Pistol",
+        "Left": "Narthecium",
+        "Armor": "Noxian Pattern Mark XIV (White)",
+        "Extra": "Reductor"
+    },
+    "L-TECHMARINE": {
+        "Right": "Power Axe",
+        "Left": "Bolt Pistol",
+        "Armor": "Noxian Pattern Mark XIV (Red)",
+        "Extra": "Servo-Arm"
+    },
+    "L-ANCIENT": {
+        "Right": "Bolt Pistol",
+        "Left": "Chapter Standard",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": "None"
+    },
+    "L-NULL-WARDEN": {
+        "Right": "Condemnor Boltgun",
+        "Left": "Null Rod",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": "Null-Grid"
+    },
+    "L-VETERAN": {
+        "Right": "Godwyn Bolt Rifle",
+        "Left": "Chainsword",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": "Crux Terminatus"
+    },
+    "L-VETERAN-SGT": {
+        "Right": "Power Sword",
+        "Left": "Plasma Pistol",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": "Crux Terminatus"
+    },
+    "L-SERGEANT": {
+        "Right": "Chainsword",
+        "Left": "Bolt Pistol",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": "Signum"
+    },
+    "L-ARTIFICER": {
+        "Right": "Master-Crafted Boltgun",
+        "Left": "Servo-Claw",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": "None"
+    },
+    "L-BOND-KEEPER": {
+        "Right": "Power Maul",
+        "Left": "Suppression Shield",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": ""
+    },
+    "L-IRON-CALCULUS": {
+        "Right": "Godwyn Bolt Rifle",
+        "Left": "Empty",
+        "Armor": "Noxian Pattern Mark XIV",
+        "Extra": ""
+    }
+    }
+
+
+# Mapping: Company -> Squad -> Rank (or "Default") -> Loadout ID
+# Use 0 for Command Squads, etc.
+WARGEAR_MAPPING = {
+    # ==========================================
+    # COMPANY 0: HIGH COMMAND & SUPPORT
+    # ==========================================
+    0: {
+        # Squad 0: Chapter Command
+        0: {
+            "Chapter Master": "L-CHAPTER-MASTER",
+            "Lieutenant": "L-LIEUTENANT",
+            "Veteran Battle Brother": "L-VETERAN",
+            "Default": "L-ASSAULT"
+        },
+        # Squad 1: Apothecarion
+        1: {
+            "Apothecary": "L-APOTHECARY",
+            "Veteran Battle Brother": "L-VETERAN",
+            "Default": ""
+        },
+        # Squad 2: Reclusiam
+        2: {
+            "Chaplain": "L-CHAPLAIN",
+            "Veteran Battle Brother": "L-VETERAN",
+            "Default": ""
+        },
+        # Squad 3: Libarius
+        3: {
+            "Null-Warden": "L-NULL-WARDEN",
+            "Veteran Battle Brother": "L-VETERAN",
+            "Default": ""
+        },
+        # Squad 4: Armory / Tech
+        4: {
+            "Techmarine": "L-TECHMARINE",
+            "Artificer Brother": "L-ARTIFICER",
+            "Veteran Battle Brother": "L-VETERAN",
+            "Default": "L-ASSAULT"
+        },
+        # Squad 5: Deathwatch (Seconded)
+        5: {
+            "Veteran Battle Brother": "L-VETERAN",
+            "Default": "L-ASSAULT"
+        }
+    },
+
+    # ==========================================
+    # COMPANY 1: VETERANS
+    # ==========================================
+    1: {
+        # Squad 0: Command
+        0: {
+            "Captain": "L-CAPTAIN",
+            "Lieutenant": "L-LIEUTENANT",
+            "Chaplain": "L-CHAPLAIN",
+            "Apothecary": "L-APOTHECARY",
+            "Standard Bearer": "L-ANCIENT",
+            "Null-Warden": "L-NULL-WARDEN",
+            "Default": ""
+        },
+        # Squads 1-10: Veteran Squads
+        "Default": {
+            "Veteran Sergeant": "L-VETERAN-SGT",
+            "Bond-Keeper": "L-BOND-KEEPER",
+            "Veteran Battle Brother": "L-VETERAN",
+            "Default": ""
+        }
+    },
+
+    # ==========================================
+    # COMPANY 2: BATTLE COMPANY
+    # ==========================================
+    2: {
+        0: { 
+            "Captain": "L-CAPTAIN", "Lieutenant": "L-LIEUTENANT", 
+            "Chaplain": "L-CHAPLAIN", "Apothecary": "L-APOTHECARY", 
+            "Standard Bearer": "L-ANCIENT", "Null-Warden": "L-NULL-WARDEN", 
+            "Default": "" 
+        },
+        "Default": { 
+            "Sergeant": "L-SERGEANT", "Bond-Keeper": "L-BOND-KEEPER", 
+            "Battle Brother": "L-TACTICAL", "Default": "L-TACTICAL" 
+        }
+    },
+
+    # ==========================================
+    # COMPANY 3: BATTLE COMPANY (With Runt Squad)
+    # ==========================================
+    3: {
+        0: { 
+            "Captain": "L-CAPTAIN", "Lieutenant": "L-LIEUTENANT", 
+            "Chaplain": "L-CHAPLAIN", "Apothecary": "L-APOTHECARY", 
+            "Standard Bearer": "L-ANCIENT", "Null-Warden": "L-NULL-WARDEN", 
+            "Default": "" 
+        },
+        # Squad 10: Runt Squad
+        10: {
+            "Sergeant (Runt)": "L-SERGEANT",
+            "Bond-Keeper": "L-BOND-KEEPER",
+            "Battle Brother (Runt)": "L-TACTICAL",
+            "Battle Brother": "L-TACTICAL",
+            "Default": ""
+        },
+        "Default": { "Sergeant": "L-SERGEANT", "Bond-Keeper": "L-BOND-KEEPER", "Battle Brother": "L-TACTICAL", "Default": "" }
+    },
+
+    # ==========================================
+    # COMPANY 4: BATTLE COMPANY (With Mixed Runt Squad)
+    # ==========================================
+    4: {
+        0: { 
+            "Captain": "L-CAPTAIN", "Lieutenant": "L-LIEUTENANT", 
+            "Chaplain": "L-CHAPLAIN", "Apothecary": "L-APOTHECARY", 
+            "Standard Bearer": "L-ANCIENT", "Null-Warden": "L-NULL-WARDEN", 
+            "Default": "" 
+        },
+        # Squad 10: Mixed Runt Squad
+        10: {
+            "Sergeant": "L-SERGEANT",
+            "Bond-Keeper": "L-BOND-KEEPER",
+            "Battle Brother (Runt)": "L-TACTICAL",
+            "Battle Brother": "L-TACTICAL",
+            "Default": ""
+        },
+        "Default": { "Sergeant": "L-SERGEANT", "Bond-Keeper": "L-BOND-KEEPER", "Battle Brother": "L-TACTICAL", "Default": "" }
+    },
+
+    # ==========================================
+    # COMPANY 5: ARMORY / TECH
+    # ==========================================
+    5: {
+        0: {
+            "Captain": "L-CAPTAIN",
+            "Lieutenant": "L-LIEUTENANT",
+            "Chaplain": "L-CHAPLAIN",
+            "Apothecary": "L-APOTHECARY",
+            "Standard Bearer": "L-ANCIENT",
+            "Null-Warden": "L-NULL-WARDEN",
+            "Techmarine": "L-TECHMARINE",
+            "Default": "L-TACTICAL"
+        },
+        # Squad 10: Runt Tech Squad
+        10: {
+            "Sergeant (Runt)": "L-SERGEANT",
+            "Bond-Keeper": "L-BOND-KEEPER",
+            "Battle Brother (Runt)": "L-TACTICAL",
+            "Default": ""
+        },
+        "Default": {
+            "Sergeant": "L-SERGEANT",
+            "Bond-Keeper": "L-BOND-KEEPER",
+            "Artificer Brother": "L-ARTIFICER",
+            "Battle Brother": "L-TACTICAL",
+            "Default": ""
+        }
+    },
+
+    # ==========================================
+    # COMPANIES 6-9: RESERVE / BATTLE COMPANIES
+    # ==========================================
+    6: {
+        0: { 
+            "Captain": "L-CAPTAIN", "Lieutenant": "L-LIEUTENANT", 
+            "Chaplain": "L-CHAPLAIN", "Apothecary": "L-APOTHECARY", 
+            "Standard Bearer": "L-ANCIENT", "Null-Warden": "L-NULL-WARDEN", 
+            "Default": "" 
+        },
+        "Default": { "Sergeant": "L-SERGEANT", "Bond-Keeper": "L-BOND-KEEPER", "Battle Brother": "L-TACTICAL", "Default": "L-TACTICAL" }
+    },
+    7: {
+        0: { 
+            "Captain": "L-CAPTAIN", "Lieutenant": "L-LIEUTENANT", 
+            "Chaplain": "L-CHAPLAIN", "Apothecary": "L-APOTHECARY", 
+            "Standard Bearer": "L-ANCIENT", "Null-Warden": "L-NULL-WARDEN", 
+            "Default": "" 
+        },
+        "Default": { "Sergeant": "L-SERGEANT", "Bond-Keeper": "L-BOND-KEEPER", "Battle Brother": "L-TACTICAL", "Default": "L-TACTICAL" }
+    },
+    8: {
+        0: { 
+            "Captain": "L-CAPTAIN", "Lieutenant": "L-LIEUTENANT", 
+            "Chaplain": "L-CHAPLAIN", "Apothecary": "L-APOTHECARY", 
+            "Standard Bearer": "L-ANCIENT", "Null-Warden": "L-NULL-WARDEN", 
+            "Default": "" 
+        },
+        "Default": { "Sergeant": "L-SERGEANT", "Bond-Keeper": "L-BOND-KEEPER", "Battle Brother": "L-TACTICAL", "Default": "L-TACTICAL" }
+    },
+    9: {
+        0: { 
+            "Captain": "L-CAPTAIN", "Lieutenant": "L-LIEUTENANT", 
+            "Chaplain": "L-CHAPLAIN", "Apothecary": "L-APOTHECARY", 
+            "Standard Bearer": "L-ANCIENT", "Null-Warden": "L-NULL-WARDEN", 
+            "Default": "" 
+        },
+        "Default": { "Sergeant": "L-SERGEANT", "Bond-Keeper": "L-BOND-KEEPER", "Battle Brother": "L-TACTICAL", "Default": "L-TACTICAL" }
+    },
+
+    # ==========================================
+    # COMPANY 10: SCOUTS
+    # ==========================================
+    10: {
+        0: { 
+            "Captain": "L-CAPTAIN", "Lieutenant": "L-LIEUTENANT", 
+            "Chaplain": "L-CHAPLAIN", "Apothecary": "L-APOTHECARY", 
+            "Standard Bearer": "L-ANCIENT", "Null-Warden": "L-NULL-WARDEN", 
+            "Default": "L-TACTICAL" 
+        },
+        # Squads 1-5: Training Squads
+        1: { "Chaplain": "L-CHAPLAIN", "Neophyte": "L-NEOPHYTE", "Default": "L-NEOPHYTE" },
+        2: { "Chaplain": "L-CHAPLAIN", "Neophyte": "L-NEOPHYTE", "Default": "L-NEOPHYTE" },
+        3: { "Chaplain": "L-CHAPLAIN", "Neophyte": "L-NEOPHYTE", "Default": "L-NEOPHYTE" },
+        4: { "Chaplain": "L-CHAPLAIN", "Neophyte": "L-NEOPHYTE", "Default": "L-NEOPHYTE" },
+        5: { "Chaplain": "L-CHAPLAIN", "Neophyte": "L-NEOPHYTE", "Default": "L-NEOPHYTE" },
+        # Squads 6-10: Scout Squads
+        "Default": { "Sergeant": "L-SERGEANT", "Neophyte": "L-NEOPHYTE", "Default": "L-NEOPHYTE" }
+    },
+
+    # ==========================================
+    # COMPANY 20: SPECIAL OPERATIONS
+    # ==========================================
+    20: {
+        1: { "Bond-Keeper": "L-BOND-KEEPER", "Default": "L-TACTICAL" },
+        2: { "Iron Calculus": "L-IRON-CALCULUS", "Default": "L-TACTICAL" }
+    }
+}
 
 # Nomenclature
 FIRST_NAMES = [
