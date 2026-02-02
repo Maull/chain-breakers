@@ -339,6 +339,9 @@ class Chapter:
                 candidates = [m for m in candidates if m.current_tier >= 1]
 
             if candidates:
+                if target_role == "Bond-Keeper":
+                    candidates = [m for m in candidates if not any(r.get("type") == "Echo" for r in m.active_relics)]
+
                 candidates.sort(
                     key=lambda x: (x.years_in_rank, x.years_in_service), reverse=True
                 )
@@ -347,6 +350,57 @@ class Chapter:
         return None
 
     def assign_relics(self, all_marines, reliquary, year):
+        if not reliquary:
+            return
+
+        # --- PASS 1: ECHO RELICS (Top-Down, Ignore Relic Count) ---
+        echo_relics = [r for r in reliquary if r.get("type") == "Echo"]
+        # Remove Echoes from main reliquary for now
+        reliquary[:] = [r for r in reliquary if r.get("type") != "Echo"]
+
+        if echo_relics:
+            eligible_ranks_echo = [
+                "Chapter Master", "Captain", "Lieutenant", "Chaplain", "Techmarine",
+                "Standard Bearer", "Veteran Sergeant", "Veteran Battle Brother", "Battle Brother"
+            ]
+            
+            # Filter candidates for Echoes
+            echo_candidates = [
+                m for m in all_marines
+                if m.status == "Alive"
+                and m.current_rank in eligible_ranks_echo
+                and m.id != "101"
+                # Specific Echo restrictions
+                and int(m.id) > 500 
+                and m.current_rank != "Bond-Keeper"
+                # Must not already have an Echo
+                and not any(r["type"] == "Echo" for r in m.active_relics)
+            ]
+
+            # Sort by Rank Priority (High to Low), then Tenure
+            rank_priority_echo = {r: i for i, r in enumerate(eligible_ranks_echo)}
+            echo_candidates.sort(
+                key=lambda m: (
+                    rank_priority_echo.get(m.current_rank, 99),
+                    m.years_in_rank * -1
+                )
+            )
+
+            # Assign Echoes
+            for cand in echo_candidates:
+                if not echo_relics:
+                    break
+                
+                relic = echo_relics.pop(0)
+                cand.receive_relic(relic, year)
+                cand.name = f"{cand.name} (Echo)"
+                log_transaction(year, cand, "Relic", f"Received {relic['name']}")
+
+            # Put back any unassigned Echoes (if any remain)
+            if echo_relics:
+                reliquary.extend(echo_relics)
+
+        # --- PASS 2: STANDARD RELICS (Spread Out) ---
         if not reliquary:
             return
 
@@ -360,6 +414,7 @@ class Chapter:
             "Standard Bearer",
             "Veteran Sergeant",
             "Veteran Battle Brother",
+            "Battle Brother",
         ]
         eligible_marines = [
             m
@@ -387,6 +442,10 @@ class Chapter:
             for candidate in eligible_marines:
                 # Find first compatible relic in reliquary
                 for i, relic in enumerate(reliquary):
+                    # Battle Brothers can only take Echoes
+                    if candidate.current_rank == "Battle Brother" and relic.get("type") != "Echo":
+                        continue
+
                     # Echo Relic Restrictions
                     if relic.get("type") == "Echo":
                         if int(candidate.id) <= 500 or candidate.current_rank == "Bond-Keeper":
