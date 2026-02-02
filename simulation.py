@@ -585,6 +585,7 @@ def run_simulation():
                     and (year - (x.implantation_year - 12)) < 40
                     and x.squad_assignment != (20, 1)
                     and x.squad_assignment != (0, 5)
+                    and not any(r.get("type") == "Echo" for r in x.active_relics)
                 ]
                 candidates.sort(key=lambda x: x.years_in_rank, reverse=True)
                 
