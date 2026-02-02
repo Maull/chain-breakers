@@ -67,14 +67,12 @@ class Marine:
             # LORE OVERRIDE: Garrick (ID 101) starts as Battle Brother
             # LORE OVERRIDE: Garrick (ID 101) starts as a Battle Brother.
             if self.id == "101":
-                self.current_rank = "Sergeant"
-                self.current_tier = TIERS.get(self.current_rank, 3)
-                self.rank_history = (
-                    f"Sergeant ({get_year_str(self.implantation_year)} - Current)\n"
-                )
                 self.current_rank = "Battle Brother"
                 self.current_tier = TIERS.get(self.current_rank, 1)
                 self.rank_history = f"Battle Brother ({get_year_str(self.implantation_year)} - Current)\n"
+                self.is_protected = True
+                self.death_str = "Alive"
+                self.death_year_abs = None
 
             # LORE OVERRIDE: Ferren Vrox (ID 200) must survive to 771.M41
             if self.id == "200":
