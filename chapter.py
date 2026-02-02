@@ -13,13 +13,18 @@ class Chapter:
             c: {s: {k: None for k in range(12)} for s in range(0, 11)}
             for c in range(0, 11)
         }
+        # 20th Company (Special Process)
+        self.grid[20] = {
+            1: {k: None for k in range(3)},      # 3 Slots for Bond-Keepers
+            2: {k: None for k in range(500)}     # Unlimited (500) for Iron Calculus + Counters
+        }
         self.reserve = []
 
     def remove_from_grid(self, marine):
         if marine.squad_assignment:
             c, s = marine.squad_assignment
-            if c in self.grid:
-                for k in range(12):
+            if c in self.grid and s in self.grid[c]:
+                for k in self.grid[c][s]:
                     if self.grid[c][s][k] == marine:
                         self.grid[c][s][k] = None
             marine.squad_assignment = None
@@ -232,6 +237,10 @@ class Chapter:
             if m.current_rank == "Dreadnought":
                 return True
 
+            # 20th Company Lockdown
+            if m.squad_assignment and m.squad_assignment[0] == 20:
+                return True
+
             if m.squad_assignment:
                 sc, ss = m.squad_assignment
                 if sc != 0 and sc != 1 and sc != -1 and sc != target_company:
@@ -378,9 +387,16 @@ class Chapter:
             for candidate in eligible_marines:
                 # Find first compatible relic in reliquary
                 for i, relic in enumerate(reliquary):
+                    # Echo Relic Restrictions
+                    if relic.get("type") == "Echo":
+                        if int(candidate.id) <= 500 or candidate.current_rank == "Bond-Keeper":
+                            continue
+
                     # Check for duplicate type
                     if not any(r["type"] == relic["type"] for r in candidate.active_relics):
                         candidate.receive_relic(relic, year)
+                        if relic.get("type") == "Echo":
+                            candidate.name = f"{candidate.name} (Echo)"
                         log_transaction(
                             year, candidate, "Relic", f"Received {relic['name']}"
                         )

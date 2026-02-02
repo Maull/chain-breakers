@@ -49,7 +49,7 @@ def log_relic_discovery(relic):
 
 # Tenure Requirements (Years in rank required for promotion)
 TENURE_REQS = {0: 8, 1: 5, 2: 10, 3: 15, 4: 20, 5: 30}
-OLD_GUARD_MORTALITY_RISK = 0.0005 # 0.05% chance per year
+OLD_GUARD_MORTALITY_RISK = 0.00005 # 0.05% chance per year
 
 # Nomenclature
 FIRST_NAMES = [
@@ -244,6 +244,7 @@ TIERS = {
     "Battle Brother": 1,
     "Battle Brother (Runt)": 1,
     "Artificer Brother": 2,
+    "Iron Calculus": 3,
     "Bond-Keeper": 2,
     "Veteran Battle Brother": 3,
     "Sergeant": 3,
@@ -310,7 +311,7 @@ DREADNOUGHT_NAMES = [
 # Format: {"id": "Rxxxx", "name": "Name", "type": "Type", "desc": "Description", "date": Year}
 FOUND_RELICS = [
 
-    {"id": "R0001", "name": "Sunder’s Echo", "type": "Power Sword", "desc": "A heavy-bladed master-work gifted by the Storm Giants; its edge is tempered in geothermal vents.", "date": 650},
+    {"id": "R0001", "name": "Sunder’s Whisper", "type": "Power Sword", "desc": "A heavy-bladed master-work gifted by the Storm Giants; its edge is tempered in geothermal vents.", "date": 650},
     {"id": "R0002", "name": "The Verdigris Aegis", "type": "Storm Shield", "desc": "Crafted from a hull-plate of the 'Gilded Lash'; it bears a permanent teal chemical patina.", "date": 725},
     {"id": "R0003", "name": "Iron-Sire's Breath", "type": "Heavy Flamer", "desc": "Recovered from the 'Shield of Terra' crash site; utilizes high-pressure mining fuel.", "date": 810},
     {"id": "R0004", "name": "The Lamented Link", "type": "Iron Halo", "desc": "A soot-stained generator gifted by the Lamenters; its field hums with a mournful frequency.", "date": 905},
@@ -418,7 +419,7 @@ STORY_CHARACTERS = [
         "Name": "Aris Thorne", 
         "Cognomen": "", 
         "Rank": "Bond-Keeper", 
-        "Company": .6, 
+        "Company": 6, 
         "Squad": 2 
     }
 ]
