@@ -203,6 +203,10 @@ class Marine:
 
     def return_relics(self, year, reliquary):
         for r in self.active_relics:
+            if r.get("type") == "Echo" and random.random() < 0.01:
+                log_transaction(year, self, "Relic Lost", f"{r['name']} lost upon death")
+                continue
+
             for h in self.relic_history:
                 if h["relic"] == r and h["end"] is None:
                     h["end"] = year
@@ -246,6 +250,14 @@ class Marine:
         elif company == 1:
             squad_str = "Command Squad" if squad == 0 else f"{get_ordinal(squad)} Squad"
             new_entry = f"1st Chapter, {squad_str} ({get_year_str(year)} - Current)\n"
+        elif company == 20:
+            if squad == 1:
+                new_entry = f"Nox, Among the People ({get_year_str(year)} - Current)\n"
+            elif squad == 2:
+                new_entry = f"Nox, Iron Forest Avenues ({get_year_str(year)} - Current)\n"
+            else:
+                squad_str = "Command Squad" if squad == 0 else f"{get_ordinal(squad)} Squad"
+                new_entry = f"20th Chapter, {squad_str} ({get_year_str(year)} - Current)\n"
         else:
             squad_str = "Command Squad" if squad == 0 else f"{get_ordinal(squad)} Squad"
             new_entry = f"{get_ordinal(company)} Chapter, {squad_str} ({get_year_str(year)} - Current)\n"
