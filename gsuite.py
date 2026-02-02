@@ -19,7 +19,7 @@ from config import (
 from utils import parse_year
 
 
-def upload_to_google_sheets(transaction_log, relics_log):
+def upload_to_google_sheets(transaction_log, relics_log, wargear_log):
     print("Initiating Uplink to Codex Datasheet...")
 
     if not os.path.exists(SERVICE_ACCOUNT_FILE):
@@ -45,6 +45,24 @@ def upload_to_google_sheets(transaction_log, relics_log):
 
         _upload_sheet("Logbook", pd.DataFrame(transaction_log))
         _upload_sheet("Relics", pd.DataFrame(relics_log))
+        
+        # Process Wargear Log for Display
+        # We want columns: ID, Type, Right, Left, Armor, Extra, Fabricated, History
+        wargear_display = []
+        for item in wargear_log:
+            # Format history string
+            hist_str = ""
+            if "history" in item:
+                entries = []
+                for h in item["history"]:
+                    end_s = f"{h['end']}" if h['end'] else "Current"
+                    entries.append(f"{h['name']} ({h['start']}-{end_s})")
+                hist_str = "; ".join(entries)
+            
+            wargear_display.append({k: v for k, v in item.items() if k != "history"})
+            wargear_display[-1]["History"] = hist_str
+
+        _upload_sheet("Wargear", pd.DataFrame(wargear_display))
         
         # Roster is still read from CSV
         try:
